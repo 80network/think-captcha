@@ -1,6 +1,6 @@
 <?php
 
-namespace jolalau\captcha;
+namespace ew80\captcha;
 
 use think\Route;
 use think\Service;
