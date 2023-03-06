@@ -18,7 +18,7 @@ class CaptchaApi
     private $config = null;
 
     /**
-     * @var cache|null
+     * @var Session|null
      */
     private $cache = null;
 
@@ -35,7 +35,7 @@ class CaptchaApi
     // 验证码字体大小(px)
     protected $fontSize = 25;
     // 是否画混淆曲线
-    protected $useCurve = true;
+    protected $useCurve = false;
     // 是否添加杂点
     protected $useNoise = true;
     // 验证码图片高度
@@ -43,7 +43,7 @@ class CaptchaApi
     // 验证码图片宽度
     protected $imageW = 0;
     // 验证码位数
-    protected $length = 5;
+    protected $length = 4;
     // 验证码字体，不设置随机获取
     protected $fontttf = '';
     // 背景颜色
@@ -55,7 +55,7 @@ class CaptchaApi
      * 架构方法 设置参数
      * @access public
      * @param Config $config
-     * @param Cache  $cache
+     * @param Cache $cache
      */
     public function __construct(Config $config, Cache $cache)
     {
@@ -94,7 +94,6 @@ class CaptchaApi
         if ($this->math) {
             $this->useZh = false;
             $this->length = 5;
-
             $x = random_int(10, 30);
             $y = random_int(1, 9);
             $bag = "{$x} + {$y} = ";
@@ -115,7 +114,7 @@ class CaptchaApi
         }
 
         $hash = password_hash($key, PASSWORD_BCRYPT, ['cost' => 10]);
-        $this->cache->store('captcha')->set('captchaApi.' . $hash, 1, $this->expire);
+        $this->cache->set('captchaApi.' . $hash, $key, $this->expire);
 
         return [
             'value' => $bag,
@@ -126,60 +125,22 @@ class CaptchaApi
     }
 
     /**
-     * 输出验证码并把验证码的值保存的缓存中
-     * @access public
-     * @param null|string $config
-     * @param bool        $api
-     * @return object
-     */
-    public function createCode(string $phone = null): array
-    {
-        $key = rand(1000, 9999);
-        $this->cache->store('captcha')->set('captchaCode.' . $phone, $key, $this->expire);
-        return [
-            'key' => $phone,
-            'code' => $key,
-        ];
-    }
-
-    /**
-     * 输出验证码并把验证码的值保存的缓存中
-     * @access public
-     * @param null|string $config
-     * @param bool        $api
-     * @return object
-     */
-    public function checkCode(string $code, string $phone): bool
-    {
-        $res = false;
-        if ($this->cache->store('captcha')->get('captchaCode.' . $phone) == $code) {
-            $res = true;
-        }
-
-        if ($res) {
-            $this->cache->rm('captchaCode.' . $phone);
-        }
-
-        return $res;
-    }
-
-    /**
      * 验证验证码是否正确
      * @access public
      * @param string $code 用户验证码
-     * @param string $key  用户验证码key
+     * @param string $key 用户验证码key
      * @return bool 用户验证码是否正确
      */
     public function check(string $code, string $hash): bool
     {
         $res = false;
-        if ($this->cache->store('captcha')->get('captchaApi.' . $hash)) {
+        if ($this->cache->get('captchaApi.' . $hash)) {
             $code = mb_strtolower($code, 'UTF-8');
             $res = password_verify($code, $hash);
         }
 
         if ($res) {
-            $this->cache->delete('captchaApi.' . $hash);
+            $this->cache->rm('captchaApi.' . $hash);
         }
 
         return $res;
@@ -189,7 +150,7 @@ class CaptchaApi
      * 输出验证码并把验证码的值保存的缓存中
      * @access public
      * @param null|string $config
-     * @param bool        $api
+     * @param bool $api
      * @return object
      */
     public function create(string $config = null, bool $api = false): array
