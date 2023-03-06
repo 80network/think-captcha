@@ -1,6 +1,6 @@
 <?php
 
-namespace jolalau\captcha;
+namespace ew80\captcha;
 
 use Exception;
 use think\Config;
@@ -157,7 +157,7 @@ class CaptchaApi
         }
 
         if ($res) {
-            $this->cache->delete('captchaCode.' . $phone);
+            $this->cache->rm('captchaCode.' . $phone);
         }
 
         return $res;
